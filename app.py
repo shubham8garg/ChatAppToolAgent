@@ -123,20 +123,20 @@ def calculate(expression: str) -> str:
     except Exception as e:
         return json.dumps({"error": f"Could not calculate: {str(e)}"})
 
-def get_current_datetime() -> str:
+def get_current_datetime(timezone: str = "UTC") -> str:
     """Get current date and time"""
     now = datetime.now()
     return json.dumps({
         "date": now.strftime("%Y-%m-%d"),
         "time": now.strftime("%H:%M:%S"),
         "day": now.strftime("%A"),
-        "timezone": "Server timezone"
+        "timezone": timezone
     })
 
-def get_random_fact() -> str:
+def get_random_fact(language: str = "en") -> str:
     """Get a random fact (free API)"""
     try:
-        response = requests.get("https://uselessfacts.jsph.pl/random.json?language=en", timeout=10)
+        response = requests.get(f"https://uselessfacts.jsph.pl/random.json?language={language}", timeout=10)
         data = response.json()
         return json.dumps({"fact": data.get("text", "No fact available")})
     except Exception as e:
@@ -226,7 +226,14 @@ tools = [
             "description": "Get the current date and time. Use this when users ask about today's date or current time.",
             "parameters": {
                 "type": "object",
-                "properties": {}
+                "properties": {
+                    "timezone": {
+                        "type": "string",
+                        "description": "Timezone (default: UTC)",
+                        "default": "UTC"
+                    }
+                },
+                "required": []
             }
         }
     },
@@ -237,7 +244,14 @@ tools = [
             "description": "Get a random interesting fact. Use this when users want to learn something random or are bored.",
             "parameters": {
                 "type": "object",
-                "properties": {}
+                "properties": {
+                    "language": {
+                        "type": "string",
+                        "description": "Language for the fact (default: en for English)",
+                        "default": "en"
+                    }
+                },
+                "required": []
             }
         }
     }
@@ -281,11 +295,16 @@ def process_tool_calls(response_message, messages_for_api):
     # Execute each tool call
     for tool_call in tool_calls:
         function_name = tool_call.function.name
-        function_args = json.loads(tool_call.function.arguments)
-        
+
+        # Parse arguments safely - handle empty or None arguments
+        try:
+            function_args = json.loads(tool_call.function.arguments) if tool_call.function.arguments else {}
+        except (json.JSONDecodeError, TypeError):
+            function_args = {}
+
         # Show tool usage in UI
         st.info(f"🔧 Using tool: **{function_name}**\n\nArgs: `{function_args}`")
-        
+
         # Execute the function
         if function_name in tool_functions:
             result = tool_functions[function_name](**function_args)
