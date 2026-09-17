@@ -406,7 +406,7 @@ Always explain what you found from the tools in a natural way."""
                 
                 # Initial API call with tools
                 response = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
+                    model="openai/gpt-oss-120b",
                     messages=messages_for_api,
                     tools=tools,
                     tool_choice="auto",
