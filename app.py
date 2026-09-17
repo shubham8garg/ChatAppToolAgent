@@ -325,7 +325,7 @@ def process_tool_calls(response_message, messages_for_api):
     
     # Get final response with tool results
     final_response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-120b",
         messages=messages_for_api,
         tools=tools,
         tool_choice="auto",
